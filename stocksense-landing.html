@@ -1,0 +1,675 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Stock-Flow — Smart Inventory, Simplified</title>
+  <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet"/>
+  <style>
+    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
+
+    :root {
+      --ink: #0f0f0f;
+      --cream: #f5f0e8;
+      --warm: #e8dfc8;
+      --accent: #c8522a;
+      --accent-light: #e8734a;
+      --moss: #3a4a2e;
+      --gold: #c9a84c;
+      --muted: #6b6358;
+      --card-bg: #faf7f2;
+    }
+
+    html { scroll-behavior: smooth; }
+
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--cream);
+      color: var(--ink);
+      overflow-x: hidden;
+    }
+
+    /* ── NAV ── */
+    nav {
+      position: fixed; top: 0; left: 0; right: 0; z-index: 100;
+      display: flex; justify-content: space-between; align-items: center;
+      padding: 1.2rem 4rem;
+      background: rgba(245,240,232,0.88);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .nav-logo {
+      font-family: 'DM Serif Display', serif;
+      font-size: 1.5rem;
+      color: var(--ink);
+      letter-spacing: -0.02em;
+    }
+    .nav-logo span { color: var(--accent); }
+    .nav-cta {
+      background: var(--ink);
+      color: var(--cream);
+      padding: 0.55rem 1.4rem;
+      border-radius: 2rem;
+      font-size: 0.85rem;
+      font-weight: 500;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s;
+    }
+    .nav-cta:hover { background: var(--accent); transform: translateY(-1px); }
+
+    /* ── HERO ── */
+    .hero {
+      min-height: 100vh;
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      align-items: center;
+      padding: 7rem 4rem 4rem;
+      gap: 4rem;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::before {
+      content: '';
+      position: absolute; inset: 0;
+      background: radial-gradient(ellipse 60% 60% at 80% 50%, rgba(200,82,42,0.07) 0%, transparent 70%);
+      pointer-events: none;
+    }
+
+    .hero-label {
+      display: inline-flex; align-items: center; gap: 0.5rem;
+      background: var(--warm);
+      border: 1px solid rgba(0,0,0,0.08);
+      padding: 0.35rem 0.9rem;
+      border-radius: 2rem;
+      font-size: 0.78rem;
+      font-weight: 500;
+      letter-spacing: 0.04em;
+      text-transform: uppercase;
+      color: var(--moss);
+      margin-bottom: 1.5rem;
+      opacity: 0;
+      animation: fadeUp 0.6s 0.1s forwards;
+    }
+    .hero-label .dot { width: 6px; height: 6px; border-radius: 50%; background: var(--moss); }
+
+    h1 {
+      font-family: 'DM Serif Display', serif;
+      font-size: clamp(2.8rem, 5vw, 4.5rem);
+      line-height: 1.08;
+      letter-spacing: -0.03em;
+      color: var(--ink);
+      opacity: 0;
+      animation: fadeUp 0.7s 0.2s forwards;
+    }
+    h1 em { font-style: italic; color: var(--accent); }
+
+    .hero-sub {
+      margin-top: 1.5rem;
+      font-size: 1.05rem;
+      line-height: 1.7;
+      color: var(--muted);
+      max-width: 480px;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.35s forwards;
+    }
+
+    .hero-actions {
+      margin-top: 2.5rem;
+      display: flex; gap: 1rem; align-items: center;
+      opacity: 0;
+      animation: fadeUp 0.7s 0.5s forwards;
+    }
+    .btn-primary {
+      background: var(--accent);
+      color: #fff;
+      padding: 0.85rem 2rem;
+      border-radius: 2rem;
+      font-size: 0.95rem;
+      font-weight: 600;
+      text-decoration: none;
+      transition: background 0.2s, transform 0.15s, box-shadow 0.2s;
+      box-shadow: 0 4px 20px rgba(200,82,42,0.25);
+    }
+    .btn-primary:hover { background: var(--accent-light); transform: translateY(-2px); box-shadow: 0 8px 28px rgba(200,82,42,0.35); }
+    .btn-ghost {
+      color: var(--ink);
+      font-size: 0.9rem;
+      font-weight: 500;
+      text-decoration: none;
+      display: flex; align-items: center; gap: 0.4rem;
+      transition: gap 0.2s;
+    }
+    .btn-ghost:hover { gap: 0.7rem; }
+
+    /* ── HERO VISUAL ── */
+    .hero-visual {
+      display: flex; justify-content: center; align-items: center;
+      opacity: 0;
+      animation: fadeIn 0.9s 0.4s forwards;
+    }
+    .dashboard-mock {
+      background: #fff;
+      border-radius: 1.5rem;
+      box-shadow: 0 24px 80px rgba(0,0,0,0.12), 0 2px 8px rgba(0,0,0,0.04);
+      padding: 1.5rem;
+      width: 100%; max-width: 440px;
+      border: 1px solid rgba(0,0,0,0.06);
+    }
+    .mock-bar { display: flex; gap: 0.4rem; margin-bottom: 1.2rem; }
+    .mock-bar span { width: 10px; height: 10px; border-radius: 50%; }
+    .mock-bar span:nth-child(1) { background: #ff5f57; }
+    .mock-bar span:nth-child(2) { background: #febc2e; }
+    .mock-bar span:nth-child(3) { background: #28c840; }
+    .mock-title { font-family: 'DM Serif Display', serif; font-size: 1rem; margin-bottom: 1rem; color: var(--ink); }
+    .mock-stats { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; margin-bottom: 1rem; }
+    .stat-card { background: var(--card-bg); border-radius: 0.75rem; padding: 0.8rem 1rem; border: 1px solid rgba(0,0,0,0.05); }
+    .stat-card .label { font-size: 0.7rem; color: var(--muted); font-weight: 500; text-transform: uppercase; letter-spacing: 0.05em; }
+    .stat-card .value { font-size: 1.4rem; font-weight: 600; margin-top: 0.2rem; color: var(--ink); }
+    .stat-card .value.warn { color: var(--accent); }
+    .mock-list { display: flex; flex-direction: column; gap: 0.5rem; }
+    .mock-item {
+      display: flex; align-items: center; justify-content: space-between;
+      background: var(--card-bg); border-radius: 0.65rem;
+      padding: 0.65rem 0.9rem; font-size: 0.82rem; border: 1px solid rgba(0,0,0,0.05);
+    }
+    .mock-item .item-name { font-weight: 500; color: var(--ink); }
+    .mock-item .item-stock { color: var(--muted); font-size: 0.78rem; }
+    .badge { font-size: 0.68rem; font-weight: 600; padding: 0.2rem 0.55rem; border-radius: 2rem; text-transform: uppercase; letter-spacing: 0.04em; }
+    .badge.ok { background: #e8f5e9; color: #2e7d32; }
+    .badge.low { background: #fff3e0; color: #e65100; }
+    .badge.out { background: #fce4ec; color: #c62828; }
+    .ai-alert {
+      margin-top: 1rem;
+      background: linear-gradient(135deg, #fff8f0, #fff3e8);
+      border: 1.5px solid rgba(200,82,42,0.2);
+      border-radius: 0.75rem; padding: 0.8rem 1rem;
+      display: flex; gap: 0.7rem; align-items: flex-start;
+    }
+    .ai-alert .ai-icon { font-size: 1.1rem; flex-shrink: 0; margin-top: 0.1rem; }
+    .ai-alert .ai-text { font-size: 0.78rem; line-height: 1.5; color: var(--ink); }
+    .ai-alert .ai-text strong { color: var(--accent); }
+
+    /* ── LOGOS BAR ── */
+    .logos {
+      background: var(--warm); padding: 2rem 4rem; text-align: center;
+      border-top: 1px solid rgba(0,0,0,0.06); border-bottom: 1px solid rgba(0,0,0,0.06);
+    }
+    .logos p { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; color: var(--muted); margin-bottom: 1.2rem; }
+    .logo-row { display: flex; justify-content: center; align-items: center; gap: 3rem; flex-wrap: wrap; }
+    .logo-item { font-family: 'DM Serif Display', serif; font-size: 1.05rem; color: rgba(0,0,0,0.28); }
+
+    /* ── FEATURES ── */
+    .features { padding: 6rem 4rem; max-width: 1100px; margin: 0 auto; }
+    .section-label { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.12em; color: var(--accent); font-weight: 600; margin-bottom: 0.8rem; }
+    .section-title { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 3.5vw, 3rem); line-height: 1.15; letter-spacing: -0.02em; max-width: 540px; }
+    .features-grid { margin-top: 3.5rem; display: grid; grid-template-columns: repeat(3, 1fr); gap: 1.5rem; }
+    .feature-card { background: var(--card-bg); border: 1px solid rgba(0,0,0,0.07); border-radius: 1.25rem; padding: 2rem; transition: transform 0.2s, box-shadow 0.2s; }
+    .feature-card:hover { transform: translateY(-4px); box-shadow: 0 16px 40px rgba(0,0,0,0.08); }
+    .feature-icon { width: 48px; height: 48px; border-radius: 0.75rem; display: flex; align-items: center; justify-content: center; font-size: 1.4rem; margin-bottom: 1.2rem; }
+    .fi-1 { background: #fde8e0; } .fi-2 { background: #e8f0e0; } .fi-3 { background: #e8ecf8; }
+    .fi-4 { background: #fdf4e0; } .fi-5 { background: #f0e8f8; } .fi-6 { background: #e0f4f4; }
+    .feature-card h3 { font-family: 'DM Serif Display', serif; font-size: 1.15rem; margin-bottom: 0.6rem; }
+    .feature-card p { font-size: 0.88rem; line-height: 1.65; color: var(--muted); }
+
+    /* ── HOW IT WORKS ── */
+    .how { background: var(--ink); color: var(--cream); padding: 6rem 4rem; }
+    .how-inner { max-width: 1100px; margin: 0 auto; }
+    .how .section-label { color: var(--gold); }
+    .how .section-title { color: var(--cream); max-width: 600px; }
+    .steps { margin-top: 3.5rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem; position: relative; }
+    .steps::before {
+      content: ''; position: absolute; top: 24px; left: 12%; right: 12%; height: 1px;
+      background: repeating-linear-gradient(to right, rgba(255,255,255,0.15) 0, rgba(255,255,255,0.15) 6px, transparent 6px, transparent 14px);
+    }
+    .step { position: relative; z-index: 1; padding-top: 0.5rem; }
+    .step-num { width: 48px; height: 48px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; font-family: 'DM Serif Display', serif; font-size: 1.1rem; color: #fff; margin-bottom: 1.2rem; box-shadow: 0 0 0 6px rgba(200,82,42,0.15); }
+    .step h4 { font-size: 1rem; font-weight: 600; margin-bottom: 0.5rem; color: var(--cream); }
+    .step p { font-size: 0.84rem; line-height: 1.65; color: rgba(245,240,232,0.55); }
+
+    /* ── AI SECTION ── */
+    .ai-section { padding: 6rem 4rem; max-width: 1100px; margin: 0 auto; display: grid; grid-template-columns: 1fr 1fr; gap: 5rem; align-items: center; }
+    .ai-section .section-title { max-width: 420px; }
+    .ai-section p { margin-top: 1.2rem; font-size: 0.95rem; line-height: 1.75; color: var(--muted); }
+    .ai-notif-stack { display: flex; flex-direction: column; gap: 0.75rem; }
+    .notif { background: #fff; border: 1px solid rgba(0,0,0,0.07); border-radius: 1rem; padding: 1rem 1.2rem; display: flex; gap: 1rem; align-items: flex-start; box-shadow: 0 4px 16px rgba(0,0,0,0.04); transition: transform 0.2s; }
+    .notif:hover { transform: translateX(6px); }
+    .notif-dot { width: 10px; height: 10px; border-radius: 50%; flex-shrink: 0; margin-top: 4px; }
+    .nd-red { background: var(--accent); box-shadow: 0 0 0 3px rgba(200,82,42,0.15); }
+    .nd-yellow { background: var(--gold); box-shadow: 0 0 0 3px rgba(201,168,76,0.15); }
+    .nd-green { background: #4caf50; box-shadow: 0 0 0 3px rgba(76,175,80,0.15); }
+    .notif-body .notif-title { font-size: 0.88rem; font-weight: 600; color: var(--ink); }
+    .notif-body .notif-desc { font-size: 0.8rem; color: var(--muted); margin-top: 0.2rem; line-height: 1.5; }
+    .notif-time { font-size: 0.72rem; color: var(--muted); margin-left: auto; flex-shrink: 0; white-space: nowrap; }
+
+    /* ── PRICING ── */
+    .pricing { padding: 6rem 4rem; max-width: 1100px; margin: 0 auto; }
+    .pricing-grid { margin-top: 3.5rem; display: grid; grid-template-columns: repeat(4, 1fr); gap: 1.5rem; align-items: start; }
+    .plan-card { background: var(--card-bg); border: 1px solid rgba(0,0,0,0.07); border-radius: 1.25rem; padding: 2rem; display: flex; flex-direction: column; gap: 0.5rem; }
+    .plan-card.featured { background: var(--ink); border-color: rgba(255,255,255,0.08); transform: scale(1.04); box-shadow: 0 20px 60px rgba(0,0,0,0.18); position: relative; }
+    .plan-badge { position: absolute; top: -0.85rem; left: 50%; transform: translateX(-50%); background: var(--accent); color: #fff; font-size: 0.7rem; font-weight: 700; padding: 0.3rem 1rem; border-radius: 2rem; letter-spacing: 0.06em; text-transform: uppercase; white-space: nowrap; }
+    .plan-tier { font-size: 0.75rem; text-transform: uppercase; letter-spacing: 0.1em; font-weight: 600; color: var(--muted); }
+    .plan-card.featured .plan-tier { color: var(--gold); }
+    .plan-price { font-family: 'DM Serif Display', serif; font-size: 2.8rem; color: var(--ink); line-height: 1; }
+    .plan-card.featured .plan-price { color: var(--cream); }
+    .plan-price span { font-size: 1rem; font-family: 'DM Sans', sans-serif; color: var(--muted); }
+    .plan-card.featured .plan-price span { color: rgba(245,240,232,0.5); }
+    .plan-desc { font-size: 0.85rem; color: var(--muted); margin-bottom: 0.5rem; }
+    .plan-card.featured .plan-desc { color: rgba(245,240,232,0.55); }
+    .plan-divider { border: none; border-top: 1px solid rgba(0,0,0,0.07); margin: 0.5rem 0; }
+    .plan-card.featured .plan-divider { border-top-color: rgba(255,255,255,0.08); }
+    .plan-features { list-style: none; display: flex; flex-direction: column; gap: 0.6rem; flex: 1; }
+    .plan-features li { font-size: 0.88rem; color: var(--ink); }
+    .plan-features li.off { color: var(--muted); }
+    .plan-card.featured .plan-features li { color: var(--cream); }
+    .plan-card.featured .plan-features li.off { color: rgba(245,240,232,0.4); }
+    .plan-btn { margin-top: 1.5rem; display: block; text-align: center; padding: 0.75rem; border-radius: 2rem; font-size: 0.88rem; font-weight: 600; text-decoration: none; cursor: pointer; transition: background 0.2s, color 0.2s; }
+    .plan-btn-outline { border: 1.5px solid var(--ink); color: var(--ink); background: transparent; }
+    .plan-btn-outline:hover { background: var(--ink); color: var(--cream); }
+    .plan-btn-solid { background: var(--accent); color: #fff; border: none; }
+    .plan-btn-solid:hover { background: var(--accent-light); }
+
+    /* ── CTA ── */
+    .cta { margin: 0 4rem 5rem; background: linear-gradient(135deg, var(--moss) 0%, #2a3a20 100%); border-radius: 2rem; padding: 5rem 4rem; text-align: center; position: relative; overflow: hidden; }
+    .cta::before { content: ''; position: absolute; inset: 0; background: radial-gradient(ellipse 50% 80% at 50% 100%, rgba(200,82,42,0.18) 0%, transparent 60%); }
+    .cta h2 { font-family: 'DM Serif Display', serif; font-size: clamp(2rem, 4vw, 3.2rem); color: var(--cream); letter-spacing: -0.02em; position: relative; }
+    .cta p { margin: 1rem auto 2.5rem; max-width: 480px; font-size: 1rem; color: rgba(245,240,232,0.65); line-height: 1.7; position: relative; }
+    .cta .btn-primary { position: relative; font-size: 1rem; padding: 1rem 2.5rem; }
+
+    /* ── FOOTER ── */
+    footer { background: var(--warm); border-top: 1px solid rgba(0,0,0,0.08); padding: 2rem 4rem; display: flex; justify-content: space-between; align-items: center; }
+    footer .nav-logo { font-size: 1.2rem; }
+    footer p { font-size: 0.8rem; color: var(--muted); }
+
+    /* ── ANIMATIONS ── */
+    @keyframes fadeUp { from { opacity: 0; transform: translateY(20px); } to { opacity: 1; transform: translateY(0); } }
+    @keyframes fadeIn { from { opacity: 0; } to { opacity: 1; } }
+
+    /* ── RESPONSIVE ── */
+
+    /* Tablet landscape: 1024px and below */
+    @media (max-width: 1024px) {
+      nav { padding: 1rem 2rem; }
+      .hero { padding: 7rem 2rem 4rem; gap: 2.5rem; }
+      .features { padding: 5rem 2rem; }
+      .features-grid { grid-template-columns: repeat(2, 1fr); }
+      .how { padding: 5rem 2rem; }
+      .ai-section { padding: 5rem 2rem; gap: 3rem; }
+      .pricing { padding: 5rem 2rem; }
+      .pricing-grid { grid-template-columns: repeat(2, 1fr); }
+      .plan-card.featured { transform: scale(1); }
+      .cta { margin: 0 2rem 4rem; padding: 4rem 2rem; }
+      footer { padding: 2rem; }
+      .logos { padding: 2rem; }
+    }
+
+    /* Tablet portrait: 768px and below */
+    @media (max-width: 768px) {
+      nav { padding: 1rem 1.25rem; }
+      .nav-logo { font-size: 1.25rem; }
+      .nav-cta { padding: 0.45rem 1rem; font-size: 0.8rem; }
+
+      .hero {
+        grid-template-columns: 1fr;
+        padding: 6.5rem 1.25rem 3rem;
+        gap: 2rem;
+        min-height: auto;
+      }
+      .hero-visual { display: none; }
+      h1 { font-size: clamp(2.2rem, 8vw, 3.2rem); }
+      .hero-sub { font-size: 0.95rem; max-width: 100%; }
+      .hero-actions { flex-direction: column; align-items: flex-start; gap: 0.75rem; }
+      .btn-primary { width: 100%; text-align: center; }
+
+      .logos { padding: 1.75rem 1.25rem; }
+      .logo-row { gap: 1.25rem; }
+      .logo-item { font-size: 0.9rem; }
+
+      .features { padding: 4rem 1.25rem; }
+      .features-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .section-title { font-size: clamp(1.6rem, 6vw, 2.2rem); max-width: 100%; }
+
+      .how { padding: 4rem 1.25rem; }
+      .steps { grid-template-columns: 1fr 1fr; gap: 1.5rem 1rem; }
+      .steps::before { display: none; }
+      .step-num { width: 40px; height: 40px; font-size: 1rem; }
+
+      .ai-section {
+        grid-template-columns: 1fr;
+        padding: 4rem 1.25rem;
+        gap: 2.5rem;
+      }
+      .ai-section .section-title { max-width: 100%; }
+
+      .pricing { padding: 4rem 1.25rem; }
+      .pricing-grid { grid-template-columns: 1fr; gap: 1rem; }
+      .plan-card.featured { transform: none; box-shadow: 0 8px 30px rgba(0,0,0,0.15); }
+
+      .cta { margin: 0 1.25rem 3rem; padding: 3rem 1.5rem; border-radius: 1.25rem; }
+      .cta h2 { font-size: clamp(1.6rem, 6vw, 2.4rem); }
+      .cta p { font-size: 0.9rem; }
+      .cta .btn-primary { display: block; width: fit-content; margin: 0 auto; }
+
+      footer { flex-direction: column; gap: 0.5rem; padding: 1.5rem 1.25rem; text-align: center; }
+    }
+
+    /* Mobile: 480px and below */
+    @media (max-width: 480px) {
+      nav { padding: 0.9rem 1rem; }
+      .nav-logo { font-size: 1.1rem; }
+      .nav-cta { font-size: 0.75rem; padding: 0.4rem 0.85rem; }
+
+      .hero { padding: 6rem 1rem 2.5rem; }
+      h1 { font-size: clamp(2rem, 9vw, 2.6rem); }
+      .hero-label { font-size: 0.7rem; }
+
+      .logos { padding: 1.5rem 1rem; }
+      .logo-row { gap: 0.9rem; }
+      .logo-item { font-size: 0.82rem; }
+
+      .features { padding: 3rem 1rem; }
+      .feature-card { padding: 1.5rem; }
+
+      .how { padding: 3rem 1rem; }
+      .steps { grid-template-columns: 1fr; }
+
+      .ai-section { padding: 3rem 1rem; }
+      .notif { flex-wrap: wrap; }
+      .notif-time { width: 100%; text-align: right; margin-top: 0.25rem; }
+
+      .pricing { padding: 3rem 1rem; }
+      .plan-price { font-size: 2.2rem; }
+
+      .cta { margin: 0 1rem 2.5rem; padding: 2.5rem 1.25rem; }
+      .cta .btn-primary { width: 100%; text-align: center; }
+
+      footer { padding: 1.25rem 1rem; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- NAV -->
+  <nav>
+    <div class="nav-logo">Stock-<span>Flow</span></div>
+    <a href="#cta" class="nav-cta">Get Started Free</a>
+  </nav>
+
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-label"><span class="dot"></span> AI-Powered Inventory</div>
+      <h1>Never run <em>out of stock</em> again</h1>
+      <p class="hero-sub">Stock-Flow keeps your shelves stocked and your business running. Get real-time inventory tracking and AI alerts — so you reorder before it's too late.</p>
+      <div class="hero-actions">
+        <a href="#cta" class="btn-primary">Start for free →</a>
+        <a href="#how" class="btn-ghost">See how it works <span>↓</span></a>
+      </div>
+    </div>
+    <div class="hero-visual">
+      <div class="dashboard-mock">
+        <div class="mock-bar"><span></span><span></span><span></span></div>
+        <div class="mock-title">Inventory Overview</div>
+        <div class="mock-stats">
+          <div class="stat-card"><div class="label">Total Items</div><div class="value">1,284</div></div>
+          <div class="stat-card"><div class="label">Low Stock</div><div class="value warn">12</div></div>
+        </div>
+        <div class="mock-list">
+          <div class="mock-item">
+            <div><div class="item-name">Olive Oil 1L</div><div class="item-stock">48 units left</div></div>
+            <span class="badge ok">OK</span>
+          </div>
+          <div class="mock-item">
+            <div><div class="item-name">Flour 5kg</div><div class="item-stock">6 units left</div></div>
+            <span class="badge low">Low</span>
+          </div>
+          <div class="mock-item">
+            <div><div class="item-name">Paper Cups</div><div class="item-stock">0 units left</div></div>
+            <span class="badge out">Out</span>
+          </div>
+        </div>
+        <div class="ai-alert">
+          <div class="ai-icon">🤖</div>
+          <div class="ai-text"><strong>AI Alert:</strong> Flour 5kg will run out in ~2 days based on current usage. Consider reordering today.</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- LOGOS -->
+  <div class="logos">
+    <p>Trusted by businesses of all kinds</p>
+    <div class="logo-row">
+      <span class="logo-item">Café Moro</span>
+      <span class="logo-item">FreshMart</span>
+      <span class="logo-item">The Brew Bar</span>
+      <span class="logo-item">Oaxaca Bistro</span>
+      <span class="logo-item">Peak Hardware</span>
+    </div>
+  </div>
+
+  <!-- FEATURES -->
+  <section class="features">
+    <div class="section-label">Features</div>
+    <h2 class="section-title">Everything you need to manage stock with confidence</h2>
+    <div class="features-grid">
+      <div class="feature-card">
+        <div class="feature-icon fi-1">📦</div>
+        <h3>Real-Time Tracking</h3>
+        <p>Monitor all your products across multiple locations from a single dashboard. Always know what you have, where it is, and how fast it's moving.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-2">🤖</div>
+        <h3>AI Reorder Alerts</h3>
+        <p>Our AI analyzes consumption patterns and sends you smart notifications before you run out — so you always reorder at the right time.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-3">🏪</div>
+        <h3>Multi-Location Support</h3>
+        <p>Managing a restaurant, a store, or multiple branches? Stock-Flow works across all your locations under one unified account.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-4">📊</div>
+        <h3>Usage Analytics</h3>
+        <p>Visualize how products are consumed over time. Spot trends, reduce waste, and make smarter purchasing decisions backed by real data.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-5">🔔</div>
+        <h3>Instant Notifications</h3>
+        <p>Get alerts via email, SMS, or push notification the moment a product hits a critical level. Your team stays informed automatically.</p>
+      </div>
+      <div class="feature-card">
+        <div class="feature-icon fi-6">⚙️</div>
+        <h3>Easy Setup</h3>
+        <p>Import your existing inventory in minutes with CSV upload or manual entry. No technical knowledge required — just sign up and go.</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- HOW IT WORKS -->
+  <section class="how" id="how">
+    <div class="how-inner">
+      <div class="section-label">How it works</div>
+      <h2 class="section-title">Up and running in four simple steps</h2>
+      <div class="steps">
+        <div class="step">
+          <div class="step-num">1</div>
+          <h4>Create Your Account</h4>
+          <p>Sign up for free and set up your business profile in under two minutes.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">2</div>
+          <h4>Add Your Inventory</h4>
+          <p>Upload products manually, via CSV, or by scanning barcodes with your phone.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">3</div>
+          <h4>Set Alert Thresholds</h4>
+          <p>Define minimum stock levels per product. Our AI will learn your patterns and refine them automatically.</p>
+        </div>
+        <div class="step">
+          <div class="step-num">4</div>
+          <h4>Relax & Get Notified</h4>
+          <p>Stock-Flow monitors everything and alerts you when action is needed. Focus on your business.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- AI SECTION -->
+  <section class="ai-section">
+    <div>
+      <div class="section-label">AI Intelligence</div>
+      <h2 class="section-title">Your AI-powered stock manager, always on call</h2>
+      <p>Stock-Flow doesn't just track — it thinks. Our AI models your consumption history and predicts when each product will run low, alerting you with enough lead time to reorder comfortably.</p>
+      <p>From a small café to a multi-branch retail chain, Stock-Flow adapts to your rhythm and keeps you one step ahead of shortages.</p>
+    </div>
+    <div class="ai-notif-stack">
+      <div class="notif">
+        <div class="notif-dot nd-red"></div>
+        <div class="notif-body">
+          <div class="notif-title">⚠️ Critical: Paper Cups — Out of Stock</div>
+          <div class="notif-desc">Location: Downtown Branch. Reorder immediately to avoid service disruption.</div>
+        </div>
+        <div class="notif-time">Just now</div>
+      </div>
+      <div class="notif">
+        <div class="notif-dot nd-yellow"></div>
+        <div class="notif-body">
+          <div class="notif-title">🟡 Low Stock: Whole Milk 1L</div>
+          <div class="notif-desc">Only 8 units remain. Based on current usage, expected to last ~1.5 days.</div>
+        </div>
+        <div class="notif-time">2h ago</div>
+      </div>
+      <div class="notif">
+        <div class="notif-dot nd-yellow"></div>
+        <div class="notif-body">
+          <div class="notif-title">🟡 Reorder Suggested: Napkins</div>
+          <div class="notif-desc">Consumption spiked 40% this week. AI recommends restocking before the weekend.</div>
+        </div>
+        <div class="notif-time">5h ago</div>
+      </div>
+      <div class="notif">
+        <div class="notif-dot nd-green"></div>
+        <div class="notif-body">
+          <div class="notif-title">✅ Restocked: Espresso Beans 1kg</div>
+          <div class="notif-desc">Inventory updated. Stock level is now healthy for the next 14 days.</div>
+        </div>
+        <div class="notif-time">Yesterday</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- PRICING -->
+  <section class="pricing">
+    <div class="section-label">Pricing</div>
+    <h2 class="section-title">Simple pricing, <em style="font-style:italic; color:var(--accent);">no surprises</em></h2>
+    <p style="margin-top:1rem; color:var(--muted); font-size:0.95rem; max-width:480px; line-height:1.7;">Choose the plan that fits your business. Upgrade or downgrade anytime.</p>
+    <div class="pricing-grid">
+
+      <!-- Free -->
+      <div class="plan-card">
+        <div class="plan-tier">Free</div>
+        <div class="plan-price">$0<span>/mo</span></div>
+        <div class="plan-desc">Try it out with no commitment.</div>
+        <hr class="plan-divider"/>
+        <ul class="plan-features">
+          <li>✅ Up to 20 products</li>
+          <li>✅ 1 location</li>
+          <li>✅ Email notifications</li>
+          <li class="off">❌ Analytics</li>
+          <li class="off">❌ AI reorder alerts</li>
+          <li class="off">❌ Multi-location</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-outline" onclick="document.getElementById('modal-overlay').style.display='flex'; return false;">Get Started</a>
+      </div>
+
+      <!-- Starter -->
+      <div class="plan-card">
+        <div class="plan-tier">Starter</div>
+        <div class="plan-price">$9<span>/mo</span></div>
+        <div class="plan-desc">Perfect for small shops and solo operators.</div>
+        <hr class="plan-divider"/>
+        <ul class="plan-features">
+          <li>✅ Up to 100 products</li>
+          <li>✅ 1 location</li>
+          <li>✅ Email notifications</li>
+          <li>✅ Basic analytics</li>
+          <li class="off">❌ AI reorder alerts</li>
+          <li class="off">❌ Multi-location</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-outline" onclick="document.getElementById('modal-overlay').style.display='flex'; return false;">Get Started</a>
+      </div>
+
+      <!-- Pro -->
+      <div class="plan-card featured">
+        <div class="plan-badge">Most Popular</div>
+        <div class="plan-tier">Pro</div>
+        <div class="plan-price">$29<span>/mo</span></div>
+        <div class="plan-desc">For growing businesses with multiple needs.</div>
+        <hr class="plan-divider"/>
+        <ul class="plan-features">
+          <li>✅ Up to 1,000 products</li>
+          <li>✅ Up to 3 locations</li>
+          <li>✅ Email & SMS notifications</li>
+          <li>✅ Advanced analytics</li>
+          <li>✅ AI reorder alerts</li>
+          <li class="off">❌ Multi-location (3+ branches)</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-solid" onclick="document.getElementById('modal-overlay').style.display='flex'; return false;">Get Started</a>
+      </div>
+
+      <!-- Enterprise -->
+      <div class="plan-card">
+        <div class="plan-tier">Enterprise</div>
+        <div class="plan-price">$79<span>/mo</span></div>
+        <div class="plan-desc">For large operations and multi-branch chains.</div>
+        <hr class="plan-divider"/>
+        <ul class="plan-features">
+          <li>✅ Unlimited products</li>
+          <li>✅ Unlimited locations</li>
+          <li>✅ Email, SMS & push alerts</li>
+          <li>✅ Full analytics suite</li>
+          <li>✅ AI reorder alerts</li>
+          <li>✅ Dedicated support</li>
+        </ul>
+        <a href="#" class="plan-btn plan-btn-outline" onclick="document.getElementById('modal-overlay').style.display='flex'; return false;">Get Started</a>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- CTA -->
+  <section class="cta" id="cta">
+    <h2>Start managing smarter today</h2>
+    <p>Join hundreds of businesses that have eliminated stockouts with Stock-Flow. Free to get started, no credit card required.</p>
+    <a href="#" class="btn-primary" id="cta-btn">Create your free account</a>
+  </section>
+
+  <!-- FOOTER -->
+  <footer>
+    <div class="nav-logo">Stock-<span>Flow</span></div>
+    <p>© 2026 Stock-Flow. All rights reserved.</p>
+  </footer>
+
+  <!-- POP-UP MODAL -->
+  <div id="modal-overlay" style="display:none; position:fixed; inset:0; background:rgba(0,0,0,0.45); backdrop-filter:blur(4px); z-index:999; align-items:center; justify-content:center;">
+    <div style="background:#faf7f2; border-radius:1.25rem; padding:2.5rem 2rem; max-width:380px; width:90%; text-align:center; box-shadow:0 24px 60px rgba(0,0,0,0.2); position:relative;">
+      <div style="font-size:2.5rem; margin-bottom:1rem;">🚧</div>
+      <h3 style="font-family:'DM Serif Display',serif; font-size:1.5rem; color:#0f0f0f; margin-bottom:0.6rem;">Coming Soon</h3>
+      <p style="font-size:0.9rem; color:#6b6358; line-height:1.6; margin-bottom:1.8rem;">This feature is not available yet. We're working hard to bring it to you soon — stay tuned!</p>
+      <button onclick="document.getElementById('modal-overlay').style.display='none'" style="background:#c8522a; color:#fff; border:none; padding:0.75rem 2rem; border-radius:2rem; font-size:0.9rem; font-weight:600; cursor:pointer;">Got it</button>
+    </div>
+  </div>
+
+  <script>
+    document.getElementById('cta-btn').addEventListener('click', function(e) {
+      e.preventDefault();
+      document.getElementById('modal-overlay').style.display = 'flex';
+    });
+    document.getElementById('modal-overlay').addEventListener('click', function(e) {
+      if (e.target === this) this.style.display = 'none';
+    });
+  </script>
+
+</body>
+</html>
