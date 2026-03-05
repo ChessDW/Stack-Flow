@@ -1,0 +1,1 @@
+A responsive HTML5 landing page for Stock-Flow — a smart inventory management system that helps businesses track stock in real time and get AI-powered reorder alerts before products run out. Built with vanilla HTML, CSS, and JavaScript. No frameworks or dependencies required.
